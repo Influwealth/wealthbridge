@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter (Chrome)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "chrome"
+            ],
+            "toolArgs": [
+                "--web-port=7357"
+            ],
+            "preLaunchTask": "flutter-pub-get"
+        },
+        {
+            "name": "Flutter (Windows Desktop)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "windows"
+            ],
+            "preLaunchTask": "flutter-pub-get"
+        }
+    ]
+}

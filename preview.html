@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthBridge - Live Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FAF9F6 0%, #EDE7F6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: white;
+            border-radius: 40px;
+            border: 12px solid #333;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .phone-frame::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 28px;
+            background: #333;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #FAF9F6;
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #7B1FA2 0%, #9C27B0 100%);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding-top: 40px;
+            flex-shrink: 0;
+        }
+
+        .app-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 60px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #6200EA;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #B39DDB;
+            border-radius: 8px;
+            background: #EDE7F6;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #7B1FA2;
+            box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.1);
+            background: white;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 10px;
+            border: 1px solid #B39DDB;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 2px 0 0 0;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            color: #333;
+            font-weight: normal;
+            font-size: 12px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #7B1FA2 0%, #9C27B0 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(123, 31, 162, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #EDE7F6;
+            background: white;
+            padding: 8px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            color: #999;
+            text-decoration: none;
+            font-size: 11px;
+            transition: color 0.2s ease;
+            flex: 1;
+            border: none;
+            background: none;
+        }
+
+        .nav-item.active {
+            color: #7B1FA2;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .card-section {
+            background: white;
+            border: 1px solid #B39DDB;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .card-button {
+            width: 100%;
+            padding: 8px;
+            background: #7B1FA2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .card-button:hover {
+            background: #9C27B0;
+        }
+
+        .card-button.connected {
+            background: #4CAF50;
+        }
+
+        .success-check {
+            color: #4CAF50;
+            font-size: 14px;
+        }
+
+        .scroll-area {
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        /* Scrollbar styling */
+        .app-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .app-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .app-content::-webkit-scrollbar-thumb {
+            background: #B39DDB;
+            border-radius: 4px;
+        }
+
+        .info-box {
+            background: #EDE7F6;
+            border-left: 4px solid #7B1FA2;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .phone-frame {
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                border-radius: 0;
+                border: none;
+            }
+
+            .phone-frame::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="phone-frame">
+        <div class="app-container">
+            <!-- Header -->
+            <div class="app-header">
+                <h1 id="page-title">Tradeline Intake Capsule</h1>
+            </div>
+
+            <!-- Content -->
+            <div class="app-content">
+                <!-- Screen 1: Partner Signup -->
+                <div id="screen-partner" class="screen">
+                    <div class="info-box">
+                        👤 Join WealthBridge as a partner and unlock financial wellness solutions
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" placeholder="Enter your company name">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Name</label>
+                        <input type="text" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" placeholder="(XXX) XXX-XXXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Website URL</label>
+                        <input type="url" placeholder="https://www.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Partner Type</label>
+                        <select>
+                            <option>Select a partner type</option>
+                            <option>Financial Institution</option>
+                            <option>Credit Counselor</option>
+                            <option>Non-Profit Organization</option>
+                            <option>Technology Partner</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="partner-terms">
+                        <label for="partner-terms">I agree to the WealthBridge Partner Terms</label>
+                    </div>
+                    <button class="button" onclick="showSuccess('Welcome to WealthBridge!')">Create Partner
+                        Account</button>
+                </div>
+
+                <!-- Screen 2: Tradeline Intake -->
+                <div id="screen-tradeline" class="screen active">
+                    <div class="info-box">
+                        💳 Complete your tradeline intake for financial optimization
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Social Security Number</label>
+                        <input type="text" placeholder="XXX-XX-XXXX" maxlength="11">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Income</label>
+                        <input type="number" placeholder="Enter your monthly income">
+                    </div>
+                    <div class="form-group">
+                        <label>Credit Score Range</label>
+                        <select>
+                            <option>Select your credit score range</option>
+                            <option>&lt;500</option>
+                            <option>500–600</option>
+                            <option>600–700</option>
+                            <option>700+</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showSuccess('Tradeline request submitted!')">Submit Tradeline
+                        Request</button>
+                </div>
+
+                <!-- Screen 3: Affiliate Onboarding -->
+                <div id="screen-affiliate" class="screen">
+                    <div class="info-box">
+                        👥 Join our affiliate network and grow your impact
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" placeholder="(XXX) XXX-XXXX">
+                    </div>
+                    <div class="form-group">
+                        <label>Organization Name</label>
+                        <input type="text" placeholder="Enter organization name">
+                    </div>
+                    <div class="form-group">
+                        <label>Referral Code</label>
+                        <input type="text" placeholder="Enter your referral code">
+                    </div>
+                    <div class="form-group">
+                        <label>Capsule Type</label>
+                        <select>
+                            <option>Select a capsule type</option>
+                            <option>Tradeline</option>
+                            <option>Funding</option>
+                            <option>Outreach</option>
+                            <option>Credit Repair</option>
+                        </select>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="card-title">
+                            💳 Stripe Account
+                            <span class="success-check">✓</span>
+                        </div>
+                        <button class="card-button connected">Stripe Connected ✓</button>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="card-title">
+                            🏦 Plaid Account
+                            <span class="success-check">✓</span>
+                        </div>
+                        <button class="card-button connected">Plaid Connected ✓</button>
+                    </div>
+
+                    <button class="button"
+                        onclick="showSuccess('Welcome aboard! Your capsule access is being provisioned.')">Join
+                        Affiliate Network</button>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <button class="nav-item active" onclick="switchScreen('partner', this)"
+                    style="border: none; background: none;">
+                    <span class="nav-icon">👤</span>
+                    <span>Partner</span>
+                </button>
+                <button class="nav-item" onclick="switchScreen('tradeline', this)"
+                    style="border: none; background: none;">
+                    <span class="nav-icon">💳</span>
+                    <span>Tradeline</span>
+                </button>
+                <button class="nav-item" onclick="switchScreen('affiliate', this)"
+                    style="border: none; background: none;">
+                    <span class="nav-icon">👥</span>
+                    <span>Affiliate</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchScreen(screenName, element) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected screen
+            document.getElementById(`screen-${screenName}`).classList.add('active');
+
+            // Highlight nav item
+            element.classList.add('active');
+
+            // Update header title
+            const titles = {
+                'partner': 'Partner Signup',
+                'tradeline': 'Tradeline Intake Capsule',
+                'affiliate': 'Affiliate Onboarding Capsule'
+            };
+            document.getElementById('page-title').textContent = titles[screenName];
+        }
+
+        function showSuccess(message) {
+            alert('✓ Success!\n\n' + message);
+        }
+    </script>
+</body>
+
+</html>

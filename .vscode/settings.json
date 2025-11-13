@@ -1,0 +1,20 @@
+{
+    "dart.flutterSdkPaths": [
+        "C:/flutter"
+    ],
+    "dart.sdkSwitchingTarget": "workspace",
+    "dart.addSdkToTerminalPath": true,
+    "dart.flutterTrackWidgetCreation": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "gemini.codeAssist.enabled": true,
+    "gemini.codeAssist.inlineSuggestions": true,
+    "gemini.codeAssist.contextWindow": 16000,
+    "gemini.codeAssist.hotkeyExplain": "ctrl+i",
+    "gemini.codeAssist.hotkeyGenerate": "ctrl+shift+g",
+    "gemini.codeAssist.hotkeyFix": "ctrl+shift+f",
+    "gemini.codeAssist.acceptSuggestion": "tab",
+    "gemini.codeAssist.dismissSuggestion": "escape"
+}
