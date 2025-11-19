@@ -1,0 +1,56 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "duration_seconds": 32.05945110321045,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "name": "CLI Enhanced (Typer)",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Help Commands",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Tutorials",
+      "status": "passed"
+    },
+    {
+      "name": "Secret Detection",
+      "status": "passed"
+    },
+    {
+      "name": "Vulnerability Detection",
+      "status": "passed"
+    },
+    {
+      "name": "Compliance Scanning",
+      "status": "passed"
+    },
+    {
+      "name": "Solidity Scanning",
+      "status": "passed"
+    },
+    {
+      "name": "Agent Prediction",
+      "status": "passed"
+    },
+    {
+      "name": "Agent Delegation",
+      "status": "passed"
+    },
+    {
+      "name": "Agent Handback",
+      "status": "passed"
+    },
+    {
+      "name": "End-to-End Flow",
+      "status": "passed"
+    },
+    {
+      "name": "Multi-Language Support",
+      "status": "passed"
+    }
+  ]
+}

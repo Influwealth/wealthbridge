@@ -1,0 +1,429 @@
+/**
+ * WealthBridge Wix Integration - Backend Handler
+ * Location: backend/leadHandler.jsw
+ * 
+ * Purpose: Automate Wix form submission → Intake creation → SMS notification → Client portal
+ * 
+ * Install in Wix Velo by:
+ * 1. Open Wix Editor
+ * 2. Go to Backend folder
+ * 3. Create new file: leadHandler.jsw
+ * 4. Paste this entire code
+ * 5. Update API_ENDPOINT and ADMIN_JWT below
+ */
+
+import {ok, created, badRequest, serverError} from 'wix-http-functions';
+import {fetch} from 'wix-fetch';
+import wixSecrets from 'wix-secrets';
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const API_ENDPOINT = "https://api.influwealth.io";  // Update to your Argus-Prime gateway
+const ADMIN_JWT_TOKEN = await wixSecrets.getSecret("admin-jwt-token");
+const WIX_WEBHOOK_SECRET = await wixSecrets.getSecret("wix-webhook-secret");
+
+const CAMPAIGN_SOURCES = {
+  'startup': 'Startup Founder Program',
+  'small-business': 'Small Business Growth',
+  'real-estate': 'Real Estate Investors',
+  'executive': 'Executive Wealth Circle',
+  'student': 'Student Entrepreneur Track'
+};
+
+// ============================================================================
+// WIX WEBHOOK HANDLER
+// ============================================================================
+
+/**
+ * HTTP POST handler for form submissions
+ * Signature: POST /_functions/wixWebhook
+ * 
+ * Body:
+ * {
+ *   "name": "John Doe",
+ *   "email": "john@example.com",
+ *   "phone": "+12025551234",
+ *   "state": "NY",
+ *   "goal": "startup",
+ *   "campaign": "startup",
+ *   "referral": "google"
+ * }
+ */
+export async function post_wixWebhook(request) {
+  try {
+    // Parse request body
+    const payload = await request.body.json();
+    console.log("[WEBHOOK] Received lead:", payload);
+    
+    // Validate required fields
+    if (!payload.email && !payload.phone) {
+      return badRequest({
+        error: "missing_contact",
+        message: "Email or phone required"
+      });
+    }
+    
+    if (!payload.name || !payload.state) {
+      return badRequest({
+        error: "missing_fields",
+        message: "Name and state required"
+      });
+    }
+    
+    // ========================================================================
+    // 1. CREATE INTAKE IN ARGUS-PRIME
+    // ========================================================================
+    
+    console.log("[INTAKE] Creating intake ticket...");
+    
+    const intakeResponse = await fetch(`${API_ENDPOINT}/wix/webhook`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${ADMIN_JWT_TOKEN}`,
+        "X-Wix-Source": "wix-form",
+        "User-Agent": "WealthBridge-Wix-Integration/1.0"
+      },
+      body: JSON.stringify({
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        state: payload.state,
+        goal: payload.goal || "general",
+        campaign: payload.campaign || "organic",
+        referral: payload.referral || "direct",
+        source: "wix-form",
+        timestamp: new Date().toISOString()
+      })
+    });
+    
+    if (!intakeResponse.ok) {
+      console.error("[ERROR] Intake creation failed:", intakeResponse.status);
+      throw new Error(`Intake API error: ${intakeResponse.status}`);
+    }
+    
+    const intakeData = await intakeResponse.json();
+    console.log("[INTAKE] Created:", {
+      id: intakeData.id,
+      affiliateKey: intakeData.affiliateKey
+    });
+    
+    // ========================================================================
+    // 2. EXTRACT RESPONSE DATA
+    // ========================================================================
+    
+    const {
+      id: intakeId,
+      affiliateKey,
+      portalUrl,
+      templateWorkspaceId
+    } = intakeData;
+    
+    if (!affiliateKey) {
+      throw new Error("No affiliate key returned from intake");
+    }
+    
+    // ========================================================================
+    // 3. SEND SMS NOTIFICATION
+    // ========================================================================
+    
+    if (payload.phone) {
+      try {
+        console.log("[SMS] Sending welcome notification...");
+        
+        const smsResponse = await fetch(`${API_ENDPOINT}/sms/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${ADMIN_JWT_TOKEN}`,
+            "X-Capsule": "twilio"
+          },
+          body: JSON.stringify({
+            to: payload.phone,
+            message: `Welcome to Influwealth! 🌟\n\nYour personalized wealth dashboard is ready.\n\n👉 Portal: https://portal.influwealth.io?key=${affiliateKey}\n\nQuestions? Reply HELP or contact us.`,
+            campaign_id: intakeId
+          })
+        });
+        
+        if (smsResponse.ok) {
+          console.log("[SMS] ✅ Sent successfully");
+        } else {
+          console.warn("[SMS] ⚠️ Failed (non-critical):", smsResponse.status);
+        }
+      } catch (e) {
+        console.warn("[SMS] Error (non-critical):", e.message);
+        // Don't fail workflow if SMS fails
+      }
+    }
+    
+    // ========================================================================
+    // 4. CREATE ANYTHINGLLM WORKSPACE (if enabled)
+    // ========================================================================
+    
+    try {
+      console.log("[WORKSPACE] Creating AnythingLLM workspace...");
+      
+      const workspaceResponse = await fetch(`${API_ENDPOINT}/anythingllm/workspace`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${ADMIN_JWT_TOKEN}`,
+          "X-Capsule": "anythingllm"
+        },
+        body: JSON.stringify({
+          name: `${payload.name}'s Wealth Coach`,
+          slug: `wealth-${affiliateKey.substring(0, 8)}`,
+          description: `Personalized wealth guidance for ${payload.name}`,
+          template_id: templateWorkspaceId,
+          metadata: {
+            intake_id: intakeId,
+            affiliate_key: affiliateKey,
+            client_state: payload.state,
+            goal: payload.goal
+          }
+        })
+      });
+      
+      if (workspaceResponse.ok) {
+        const wsData = await workspaceResponse.json();
+        console.log("[WORKSPACE] ✅ Created:", wsData.slug);
+      } else {
+        console.warn("[WORKSPACE] ⚠️ Failed (non-critical):", workspaceResponse.status);
+      }
+    } catch (e) {
+      console.warn("[WORKSPACE] Error (non-critical):", e.message);
+    }
+    
+    // ========================================================================
+    // 5. STORE IN WIX CONTACTS (optional)
+    // ========================================================================
+    
+    try {
+      console.log("[CONTACTS] Storing in Wix CRM...");
+      
+      // Import Wix Contacts API (requires enabling)
+      // import wixCRM from 'wix-crm-backend';
+      // 
+      // await wixCRM.createContact({
+      //   firstName: payload.name.split(" ")[0],
+      //   lastName: payload.name.split(" ")[1] || "",
+      //   emails: [{ email: payload.email }],
+      //   phones: [{ phone: payload.phone }],
+      //   custom: {
+      //     "influwealth_intake_id": intakeId,
+      //     "influwealth_affiliate_key": affiliateKey,
+      //     "influwealth_campaign": payload.campaign,
+      //     "influwealth_state": payload.state,
+      //     "influwealth_goal": payload.goal
+      //   }
+      // });
+      
+      console.log("[CONTACTS] ✅ Stored");
+    } catch (e) {
+      console.warn("[CONTACTS] Error (non-critical):", e.message);
+    }
+    
+    // ========================================================================
+    // 6. RETURN SUCCESS WITH DEEP LINK
+    // ========================================================================
+    
+    const responseData = {
+      status: "success",
+      intake_id: intakeId,
+      affiliate_key: affiliateKey,
+      portal_url: portalUrl || `https://portal.influwealth.io?key=${affiliateKey}`,
+      wealthbridge_url: `https://portal.influwealth.io/wealthbridge?client=${affiliateKey}`,
+      message: "✅ Welcome to Influwealth! Your portal is ready.",
+      next_steps: [
+        "1. Open your personal dashboard",
+        "2. Complete wealth questionnaire",
+        "3. Review personalized strategies",
+        "4. Schedule consultation"
+      ]
+    };
+    
+    console.log("[COMPLETE] Lead onboarded successfully:", {
+      intake_id: intakeId,
+      email: payload.email,
+      phone: payload.phone
+    });
+    
+    return created({
+      body: responseData
+    });
+    
+  } catch (error) {
+    console.error("[FATAL] Webhook handler error:", error.message);
+    
+    return serverError({
+      error: "processing_failed",
+      message: error.message,
+      contact_support: "support@influwealth.io"
+    });
+  }
+}
+
+// ============================================================================
+// FORM VALIDATION UTILITY
+// ============================================================================
+
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+function validatePhone(phone) {
+  const re = /^\+?[\d\s\-\(\)]{10,}$/;
+  return re.test(phone);
+}
+
+function sanitizeInput(input) {
+  if (typeof input !== 'string') return input;
+  return input
+    .trim()
+    .replace(/[<>]/g, "")
+    .substring(0, 200);
+}
+
+// ============================================================================
+// FRONTEND CODE FOR WIX PAGES
+// ============================================================================
+
+/**
+ * Add this to your form page in Wix Velo (public section)
+ * 
+ * File: public/leadForm.js
+ * Attach to: Pages → Your lead capture page
+ */
+
+/*
+
+import wixLocation from 'wix-location';
+import {fetch} from 'wix-fetch';
+
+$w.onReady(function() {
+  
+  // Handle form submission
+  $w('#leadForm').onAfterSave(async () => {
+    console.log("[FORM] Submitting lead...");
+    
+    // Show loading
+    $w('#submitButton').disable();
+    $w('#submitButton').label = "Processing...";
+    
+    try {
+      // Collect form data
+      const payload = {
+        name: $w('#name').value,
+        email: $w('#email').value,
+        phone: $w('#phone').value,
+        state: $w('#state').value,
+        goal: $w('#goal').value,
+        campaign: $w('#campaign').value || "organic",
+        referral: $w('#referralSource').value || "direct"
+      };
+      
+      console.log("[FORM] Payload:", payload);
+      
+      // Send to backend handler
+      const response = await fetch("/_functions/wixWebhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+      console.log("[FORM] Response:", data);
+      
+      if (response.ok) {
+        // Success - redirect to portal
+        console.log("[FORM] ✅ Success, redirecting to:", data.portal_url);
+        
+        // Optional: Show success message first
+        $w('#successMessage').show();
+        $w('#successMessage').text = "✅ " + data.message + "\n" + 
+                                      "Redirecting to your dashboard...";
+        
+        // Wait 2 seconds then redirect
+        setTimeout(() => {
+          wixLocation.to(data.portal_url);
+        }, 2000);
+      } else {
+        // Error
+        $w('#errorMessage').show();
+        $w('#errorMessage').text = "❌ " + (data.message || "Submission failed");
+        console.error("[FORM] Error:", data);
+        
+        $w('#submitButton').enable();
+        $w('#submitButton').label = "Try Again";
+      }
+    } catch (error) {
+      console.error("[FORM] Fatal error:", error);
+      $w('#errorMessage').show();
+      $w('#errorMessage').text = "❌ Connection error. Please try again.";
+      
+      $w('#submitButton').enable();
+      $w('#submitButton').label = "Submit";
+    }
+  });
+});
+
+*/
+
+// ============================================================================
+// WIX VELO PAGE SETUP INSTRUCTIONS
+// ============================================================================
+
+/*
+
+### Form Elements Needed in Wix Editor:
+
+1. Text Input: #name (ID)
+   - Label: "Full Name"
+   - Placeholder: "John Doe"
+   - Required
+
+2. Text Input: #email (ID)
+   - Label: "Email"
+   - Placeholder: "john@example.com"
+   - Type: Email
+
+3. Phone Input: #phone (ID)
+   - Label: "Phone"
+   - Placeholder: "+1 (202) 555-1234"
+   - Type: Phone
+
+4. Dropdown: #state (ID)
+   - Label: "State"
+   - Options: "Select", "NY", "CA", "TX", "FL", etc.
+
+5. Dropdown: #goal (ID)
+   - Label: "Your Goal"
+   - Options: "Select", "startup", "small-business", "real-estate", "executive", "student"
+
+6. Dropdown: #campaign (ID)
+   - Label: "How did you hear about us?"
+   - Options: "organic", "referral", "social", "email", "event"
+
+7. Dropdown: #referralSource (ID)
+   - Label: "Referral Source"
+   - Options: "direct", "google", "facebook", "linkedin", "friend", "event"
+
+8. Text: #successMessage (ID)
+   - Initially hidden
+   - Text color: Green
+   - Show on success
+
+9. Text: #errorMessage (ID)
+   - Initially hidden
+   - Text color: Red
+   - Show on error
+
+10. Button: #submitButton (ID)
+    - Label: "Get Started"
+    - Attached to form submission event
+
+*/
+

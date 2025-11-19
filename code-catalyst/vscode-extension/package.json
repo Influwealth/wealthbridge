@@ -1,0 +1,207 @@
+{
+    "name": "code-catalyst",
+    "displayName": "Code Catalyst - AI Developer Assistant",
+    "description": "AI-powered code suggestions, security scanning, and smart contract analysis for WealthBridge ecosystem",
+    "version": "1.0.0",
+    "publisher": "influwealth",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "AI",
+        "Programming Languages",
+        "Linters",
+        "Debuggers"
+    ],
+    "keywords": [
+        "ai",
+        "code-generation",
+        "security",
+        "smart-contracts",
+        "web3",
+        "flutter",
+        "dart",
+        "solidity"
+    ],
+    "icon": "resources/icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/influwealth/code-catalyst"
+    },
+    "activationEvents": [
+        "onStartupFinished",
+        "onCommand:codeCatalyst.quickFix",
+        "onCommand:codeCatalyst.analyze",
+        "onCommand:codeCatalyst.auditSecurity",
+        "onCommand:codeCatalyst.analyzeContract",
+        "onCommand:codeCatalyst.openTutorial"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "codeCatalyst.quickFix",
+                "title": "Code Catalyst: Get AI Suggestion",
+                "category": "Code Catalyst"
+            },
+            {
+                "command": "codeCatalyst.analyze",
+                "title": "Code Catalyst: Analyze Code",
+                "category": "Code Catalyst"
+            },
+            {
+                "command": "codeCatalyst.auditSecurity",
+                "title": "Code Catalyst: Security Audit",
+                "category": "Code Catalyst"
+            },
+            {
+                "command": "codeCatalyst.analyzeContract",
+                "title": "Code Catalyst: Analyze Smart Contract",
+                "category": "Code Catalyst"
+            },
+            {
+                "command": "codeCatalyst.openTutorial",
+                "title": "Code Catalyst: Show Tutorial",
+                "category": "Code Catalyst"
+            },
+            {
+                "command": "codeCatalyst.openSettings",
+                "title": "Code Catalyst: Open Settings",
+                "category": "Code Catalyst"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "codeCatalyst.quickFix",
+                "key": "ctrl+alt+c",
+                "mac": "cmd+alt+c",
+                "when": "editorFocus"
+            },
+            {
+                "command": "codeCatalyst.auditSecurity",
+                "key": "ctrl+shift+s",
+                "mac": "cmd+shift+s",
+                "when": "editorFocus"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "codeCatalyst.quickFix",
+                    "group": "1_modification",
+                    "when": "editorFocus"
+                },
+                {
+                    "command": "codeCatalyst.auditSecurity",
+                    "group": "1_modification",
+                    "when": "editorFocus"
+                },
+                {
+                    "command": "codeCatalyst.analyzeContract",
+                    "group": "1_modification",
+                    "when": "editorLangId == solidity || editorLangId == javascript || editorLangId == typescript"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "codeCatalyst.quickFix"
+                },
+                {
+                    "command": "codeCatalyst.analyze"
+                },
+                {
+                    "command": "codeCatalyst.auditSecurity"
+                },
+                {
+                    "command": "codeCatalyst.analyzeContract"
+                },
+                {
+                    "command": "codeCatalyst.openTutorial"
+                },
+                {
+                    "command": "codeCatalyst.openSettings"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Code Catalyst",
+            "properties": {
+                "codeCatalyst.backendUrl": {
+                    "type": "string",
+                    "default": "http://localhost:8001",
+                    "description": "Backend API URL for Code Catalyst"
+                },
+                "codeCatalyst.enableInlineHints": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show inline code suggestions"
+                },
+                "codeCatalyst.autoAuditOnSave": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically audit code when saved"
+                },
+                "codeCatalyst.enableTutorials": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show tutorials for new users"
+                },
+                "codeCatalyst.language": {
+                    "type": "string",
+                    "enum": [
+                        "dart",
+                        "solidity",
+                        "javascript",
+                        "typescript",
+                        "python",
+                        "rust"
+                    ],
+                    "default": "dart",
+                    "description": "Primary programming language"
+                }
+            }
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "codeCatalystView",
+                    "title": "Code Catalyst",
+                    "icon": "resources/icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "codeCatalystView": [
+                {
+                    "id": "codeCatalystTutorials",
+                    "name": "Tutorials",
+                    "when": "config.codeCatalyst.enableTutorials"
+                },
+                {
+                    "id": "codeCatalystStatus",
+                    "name": "Status"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run build",
+        "build": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts",
+        "package": "vsce package",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.85.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vsce": "^2.15.0"
+    },
+    "dependencies": {
+        "axios": "^1.6.0"
+    }
+}

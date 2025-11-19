@@ -1,0 +1,96 @@
+# Environment & Credentials
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.staging
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+mongodb_data/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Redis
+dump.rdb
+
+# Node (if any)
+node_modules/
+package-lock.json
+yarn.lock
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.tmp/
+
+# Sensitive files
+*.pem
+*.key
+private_key.txt
+credentials.json
+secrets.json
+
+# Lock files (optional - uncomment if you want to commit them)
+# requirements.lock
+# pubspec.lock
+
+# GitHub App
+github_webhook_secret.txt
+app_private_key.pem
