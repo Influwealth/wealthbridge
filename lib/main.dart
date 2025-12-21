@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:wealthbridge/browser/browser_shell.dart';
 import 'package:wealthbridge/widgets/capsule_bank_dashboard_updated.dart';
 import 'package:wealthbridge/widgets/funding_lookup_capsule.dart';
 import 'package:wealthbridge/widgets/stablecoin_factory_capsule.dart';
@@ -95,6 +96,11 @@ class _WealthBridgeHomeState extends State<WealthBridgeHome> {
   int _selectedIndex = 0;
 
   final List<Map<String, dynamic>> _navigationItems = [
+    {
+      'label': 'Home',
+      'icon': Icons.language,
+      'widget': const BrowserShell(),
+    },
     {
       'label': 'Dashboard',
       'icon': Icons.dashboard,
