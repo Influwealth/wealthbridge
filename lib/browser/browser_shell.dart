@@ -31,6 +31,7 @@ class _BrowserShellState extends State<BrowserShell> {
   final TextEditingController _addressController = TextEditingController();
   final ValueNotifier<bool> _isLoading = ValueNotifier(false);
   late final BrowserProfileStorage _storage;
+  late final Future<void> _storageInit;
 
   int _activeIndex = 0;
   int _tabCounter = 0;
@@ -41,7 +42,7 @@ class _BrowserShellState extends State<BrowserShell> {
   void initState() {
     super.initState();
     _storage = widget.storageManager;
-    unawaited(_storage.init());
+    _storageInit = _storage.init();
     _createTab(widget.initialUrl);
   }
 
@@ -233,13 +234,15 @@ class _BrowserShellState extends State<BrowserShell> {
         _addressController.text = url;
       }
     });
-    unawaited(_storage.recordVisit(tab.currentUrl, tab.title));
-    unawaited(_storage.persistCookiesForUrl(tab.currentUrl));
+    _runAfterStorageInit(() async {
+      await _storage.recordVisit(tab.currentUrl, tab.title);
+      await _storage.persistCookiesForUrl(tab.currentUrl);
+    });
   }
 
   void _handleDownload(BrowserTab tab, DownloadStartRequest request) {
-    unawaited(
-      _storage.recordDownload(
+    _runAfterStorageInit(
+      () => _storage.recordDownload(
         request.url.toString(),
         fileName: request.suggestedFilename,
       ),
@@ -305,6 +308,16 @@ class _BrowserShellState extends State<BrowserShell> {
         content: Text('Error loading ${url ?? 'page'}: $message ($code)'),
         duration: const Duration(seconds: 3),
       ),
+    );
+  }
+
+  void _runAfterStorageInit(Future<void> Function() task) {
+    unawaited(
+      _storageInit.then((_) => task()).catchError((Object error, StackTrace stack) {
+        if (kDebugMode) {
+          debugPrint('Storage task failed: $error');
+        }
+      }),
     );
   }
 
